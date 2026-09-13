@@ -1,0 +1,135 @@
+generator client {
+    provider = "prisma-client-js"
+    binaryTargets = ["native", "linux-musl-arm64-openssl-3.0.x"]
+}
+
+datasource db {
+    provider = "postgresql"
+    url      = env("DATABASE_URL")
+}
+
+model Admin {
+  id           String     @id @default(cuid())
+  email        String     @unique
+  passwordHash String
+  name         String
+  createdAt    DateTime   @default(now())
+  isActive     Boolean    @default(true)
+  jornadas     Jornada[]
+  auditLogs    AuditLog[]
+}
+
+model Operator {
+  id             String     @id @default(cuid())
+  name           String
+  codeHash       String     @unique
+  isActive       Boolean    @default(true)
+  failedAttempts Int        @default(0)
+  blockedUntil   DateTime?
+  createdAt      DateTime   @default(now())
+  deliveries     Delivery[]
+  auditLogs      AuditLog[]
+}
+
+model OperatorLoginAttempt {
+  id             String   @id @default(cuid())
+  key            String   @unique
+  failedAttempts Int      @default(0)
+  blockedUntil   DateTime?
+  updatedAt      DateTime @updatedAt
+}
+
+model Jornada {
+  id               String        @id @default(cuid())
+  description      String
+  officialDate     DateTime
+  status           JornadaStatus @default(CONFIGURADA)
+  allowEarly       Boolean       @default(false)
+  allowLate        Boolean       @default(false)
+  createdAt        DateTime      @default(now())
+  createdByAdminId String
+  admin            Admin         @relation(fields: [createdByAdminId], references: [id])
+  beneficiaries    Beneficiary[]
+  deliveries       Delivery[]
+  auditLogs        AuditLog[]
+  backups          Backup[]
+}
+
+enum JornadaStatus {
+  CONFIGURADA
+  ACTIVA
+  REABIERTA
+  CERRADA
+}
+
+model Beneficiary {
+  id        String    @id @default(cuid())
+  fullName  String
+  cedula    String
+  jornadaId String
+  jornada   Jornada   @relation(fields: [jornadaId], references: [id], onDelete: Cascade)
+  delivery  Delivery?
+  createdAt DateTime  @default(now())
+
+  @@unique([jornadaId, cedula])
+  @@index([cedula])
+  @@index([jornadaId])
+}
+
+model Delivery {
+  id                  String    @id @default(cuid())
+  jornadaId           String
+  beneficiaryId       String    @unique
+  operatorId          String
+  photoPath           String
+  photoReplacedAt     DateTime?
+  photoOriginalPath   String?
+  serverTimestamp     DateTime
+  deviceTimestamp     DateTime?
+  correctedTimestamp  DateTime?
+  correctionReason    String?
+  correctedAt         DateTime?
+  correctedByAdminId  String?
+  isPhotoReplaced     Boolean   @default(false)
+  createdAt           DateTime  @default(now())
+  jornada             Jornada   @relation(fields: [jornadaId], references: [id])
+  beneficiary         Beneficiary @relation(fields: [beneficiaryId], references: [id])
+  operator            Operator  @relation(fields: [operatorId], references: [id])
+  auditLogs           AuditLog[]
+
+  @@unique([jornadaId, beneficiaryId])
+  @@index([jornadaId])
+  @@index([operatorId])
+}
+
+model AuditLog {
+  id         String    @id @default(cuid())
+  timestamp  DateTime  @default(now())
+  actionType String
+  entityType String?
+  entityId   String?
+  detail     String?
+  adminId    String?
+  operatorId String?
+  admin      Admin?    @relation(fields: [adminId], references: [id])
+  operator   Operator? @relation(fields: [operatorId], references: [id])
+  jornadaId  String?
+  jornada    Jornada?  @relation(fields: [jornadaId], references: [id])
+  deliveryId String?
+  delivery   Delivery? @relation(fields: [deliveryId], references: [id])
+  ipAddress  String?
+  userAgent  String?
+}
+
+model Backup {
+  id               String   @id @default(cuid())
+  jornadaId        String?
+  jornada          Jornada? @relation(fields: [jornadaId], references: [id])
+  storagePath      String
+  sizeBytes        Int?
+  createdAt        DateTime @default(now())
+  createdByAdminId String?
+  trigger          String
+  isRestored       Boolean  @default(false)
+  restoredAt       DateTime?
+}
