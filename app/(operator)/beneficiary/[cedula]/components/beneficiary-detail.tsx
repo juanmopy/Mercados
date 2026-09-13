@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { User, CheckCircle, XCircle, Camera, ArrowLeft } from 'lucide-react';
 
-export function BeneficiaryDetail({ cedula }: { cedula: string }) {
+export function BeneficiaryDetail({ cedula }: { readonly cedula: string }) {
   const router = useRouter();
   const [beneficiary, setBeneficiary] = useState<any>(null);
   const [hasDelivery, setHasDelivery] = useState(false);

@@ -1,6 +1,6 @@
 'use client';
 
-import { FormEvent, useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   ArrowLeft,
@@ -236,7 +236,7 @@ export function ScannerView() {
   }, [activeDeviceId, startCamera]);
 
   const findBeneficiary = useCallback(
-    async (event: FormEvent) => {
+    async (event: Parameters<NonNullable<React.ComponentProps<'form'>['onSubmit']>>[0]) => {
       event.preventDefault();
       const cleanCedula = cedula.replace(/\D/g, '');
       if (!cleanCedula) {
