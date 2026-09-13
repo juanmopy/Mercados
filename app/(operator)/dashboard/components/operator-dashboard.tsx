@@ -7,7 +7,7 @@ import { Search, Camera, LogOut, Package, User } from 'lucide-react';
 export function OperatorDashboard() {
   const router = useRouter();
   const [operatorName, setOperatorName] = useState('');
-  const [deliveryCount] = useState(0);
+  const [deliveryCount, setDeliveryCount] = useState(0);
   const [activeJornada, setActiveJornada] = useState<any>(null);
   const [cedula, setCedula] = useState('');
   const [searching, setSearching] = useState(false);
@@ -21,6 +21,7 @@ export function OperatorDashboard() {
       const data = await res.json();
       if (data?.type !== 'operator') { router.push('/'); return; }
       setOperatorName(data?.name ?? '');
+      setDeliveryCount(data?.deliveryCount ?? 0);
 
       const jRes = await fetch('/api/jornadas/active');
       const jData = await jRes.json();
@@ -128,7 +129,7 @@ export function OperatorDashboard() {
             className="w-full py-4 rounded-xl bg-gray-700 hover:bg-gray-600 text-white text-xl font-bold mb-4 flex items-center justify-center gap-2 transition-all active:scale-95"
           >
             <Camera className="w-6 h-6" />
-            Leer cédula con OCR
+            Capturar CC
           </button>
         </>
       )}

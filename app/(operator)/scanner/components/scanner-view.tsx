@@ -154,8 +154,8 @@ export function ScannerView() {
 
     const sourceWidth = video.videoWidth;
     const sourceHeight = video.videoHeight;
-    const cropWidth = Math.round(sourceWidth * 0.9);
-    const cropHeight = Math.round(sourceHeight * 0.42);
+    const cropWidth = Math.round(sourceWidth * 0.82);
+    const cropHeight = Math.round(cropWidth / 1.586);
     const sourceX = Math.round((sourceWidth - cropWidth) / 2);
     const sourceY = Math.round((sourceHeight - cropHeight) / 2);
 
@@ -280,7 +280,7 @@ export function ScannerView() {
           >
             <ArrowLeft className="h-5 w-5" /> Volver
           </button>
-          <span className="text-sm text-gray-400">Lectura de cédula</span>
+          <span className="text-sm text-gray-400">Capturar CC</span>
         </div>
 
         {phase === 'camera' && (
@@ -293,9 +293,9 @@ export function ScannerView() {
                 playsInline
                 className="aspect-[3/4] w-full object-cover"
               />
-              <div className="pointer-events-none absolute inset-x-[5%] top-1/2 aspect-[2.15/1] -translate-y-1/2 rounded-xl border-4 border-green-400 shadow-[0_0_0_999px_rgba(0,0,0,0.4)]" />
+              <div className="pointer-events-none absolute inset-x-[8%] top-1/2 aspect-[1.586/1] -translate-y-1/2 rounded-xl border-4 border-green-400 shadow-[0_0_0_999px_rgba(0,0,0,0.4)]" />
               <p className="absolute inset-x-4 bottom-4 rounded-lg bg-black/70 p-2 text-center text-sm">
-                Ubique el número de la cédula dentro del recuadro
+                Ubique la cédula completa dentro del recuadro
               </p>
             </div>
 
@@ -317,7 +317,7 @@ export function ScannerView() {
                 disabled={Boolean(cameraError)}
                 className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-green-600 py-4 text-xl font-bold disabled:bg-gray-700"
               >
-                <Camera className="h-6 w-6" /> Leer número
+                <Camera className="h-6 w-6" /> Capturar CC
               </button>
               {devices.length > 1 && (
                 <button
