@@ -89,28 +89,16 @@ export function ScannerView() {
           throw new DOMException('API de cámara no disponible', 'NotSupportedError');
         }
 
-        let stream: MediaStream;
-        try {
-          stream = await navigator.mediaDevices.getUserMedia({
-            video: deviceId
-              ? {
-                  deviceId: { exact: deviceId },
-                  width: CAMERA_CONSTRAINTS.width,
-                  height: CAMERA_CONSTRAINTS.height,
-                }
-              : CAMERA_CONSTRAINTS,
-            audio: false,
-          });
-        } catch (cameraError) {
-          if (deviceId) throw cameraError;
-          stream = await navigator.mediaDevices.getUserMedia({
-            video: {
-              width: CAMERA_CONSTRAINTS.width,
-              height: CAMERA_CONSTRAINTS.height,
-            },
-            audio: false,
-          });
-        }
+        let stream = await navigator.mediaDevices.getUserMedia({
+          video: deviceId
+            ? {
+                deviceId: { exact: deviceId },
+                width: CAMERA_CONSTRAINTS.width,
+                height: CAMERA_CONSTRAINTS.height,
+              }
+            : CAMERA_CONSTRAINTS,
+          audio: false,
+        });
 
         if (requestRef.current !== requestId) {
           stream.getTracks().forEach((track) => track.stop());
@@ -119,7 +107,12 @@ export function ScannerView() {
 
         streamRef.current = stream;
         const track = stream.getVideoTracks()[0];
-        setActiveDeviceId(track?.getSettings().deviceId ?? deviceId ?? '');
+        const settings = track?.getSettings();
+        if (!deviceId && settings?.facingMode === 'user') {
+          stream.getTracks().forEach((videoTrack) => videoTrack.stop());
+          throw new Error('El navegador seleccionó la cámara frontal.');
+        }
+        setActiveDeviceId(settings?.deviceId ?? deviceId ?? '');
 
         const available = await navigator.mediaDevices.enumerateDevices();
         const rearCamera = available.find((device) => device.kind === 'videoinput' && isRearCamera(device));
@@ -135,7 +128,12 @@ export function ScannerView() {
             audio: false,
           });
           streamRef.current = stream;
-          setActiveDeviceId(stream.getVideoTracks()[0]?.getSettings().deviceId ?? rearCamera.deviceId);
+          const rearTrack = stream.getVideoTracks()[0];
+          if (rearTrack?.getSettings().facingMode === 'user') {
+            stream.getTracks().forEach((videoTrack) => videoTrack.stop());
+            throw new Error('La cámara trasera no está disponible.');
+          }
+          setActiveDeviceId(rearTrack?.getSettings().deviceId ?? rearCamera.deviceId);
         }
 
         if (videoRef.current) {

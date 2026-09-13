@@ -29,20 +29,19 @@ export function CaptureView() {
 
   const startCamera = useCallback(async () => {
     try {
-      let stream: MediaStream;
-      try {
-        stream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: { exact: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } },
-        });
-      } catch {
-        stream = await navigator.mediaDevices.getUserMedia({
-          video: { width: { ideal: 1280 }, height: { ideal: 720 } },
-        });
-      }
+      let stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: { exact: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } },
+      });
 
       const devices = await navigator.mediaDevices.enumerateDevices();
       const rearCamera = devices.find((device) => device.kind === 'videoinput' && isRearCamera(device));
-      const activeDeviceId = stream.getVideoTracks()[0]?.getSettings().deviceId;
+      const activeTrack = stream.getVideoTracks()[0];
+      const settings = activeTrack?.getSettings();
+      if (settings?.facingMode === 'user') {
+        stream.getTracks().forEach((track) => track.stop());
+        throw new Error('El navegador seleccionó la cámara frontal.');
+      }
+      const activeDeviceId = settings?.deviceId;
       if (rearCamera?.deviceId && rearCamera.deviceId !== activeDeviceId) {
         stream.getTracks().forEach((track) => track.stop());
         stream = await navigator.mediaDevices.getUserMedia({
@@ -52,6 +51,10 @@ export function CaptureView() {
             height: { ideal: 720 },
           },
         });
+        if (stream.getVideoTracks()[0]?.getSettings().facingMode === 'user') {
+          stream.getTracks().forEach((track) => track.stop());
+          throw new Error('La cámara trasera no está disponible.');
+        }
       }
 
       streamRef.current = stream;
