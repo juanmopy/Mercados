@@ -4,6 +4,10 @@ import { useState, useRef, useCallback, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Camera, RotateCcw, CheckCircle, ArrowLeft, Loader2, AlertCircle } from 'lucide-react';
 
+function isRearCamera(device: MediaDeviceInfo): boolean {
+  return /back|rear|environment|trasera|posterior/i.test(device.label);
+}
+
 export function CaptureView() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -32,9 +36,24 @@ export function CaptureView() {
         });
       } catch {
         stream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } },
+          video: { width: { ideal: 1280 }, height: { ideal: 720 } },
         });
       }
+
+      const devices = await navigator.mediaDevices.enumerateDevices();
+      const rearCamera = devices.find((device) => device.kind === 'videoinput' && isRearCamera(device));
+      const activeDeviceId = stream.getVideoTracks()[0]?.getSettings().deviceId;
+      if (rearCamera?.deviceId && rearCamera.deviceId !== activeDeviceId) {
+        stream.getTracks().forEach((track) => track.stop());
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: {
+            deviceId: { exact: rearCamera.deviceId },
+            width: { ideal: 1280 },
+            height: { ideal: 720 },
+          },
+        });
+      }
+
       streamRef.current = stream;
       if (videoRef.current) {
         videoRef.current.srcObject = stream;

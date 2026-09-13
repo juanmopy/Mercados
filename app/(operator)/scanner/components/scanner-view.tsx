@@ -20,6 +20,10 @@ const CAMERA_CONSTRAINTS: MediaTrackConstraints = {
   height: { ideal: 1080 },
 };
 
+function isRearCamera(device: MediaDeviceInfo): boolean {
+  return /back|rear|environment|trasera|posterior/i.test(device.label);
+}
+
 function cameraErrorMessage(error: unknown): string {
   if (!window.isSecureContext) {
     return 'La cámara requiere HTTPS. Abra la aplicación desde una dirección segura.';
@@ -101,7 +105,6 @@ export function ScannerView() {
           if (deviceId) throw cameraError;
           stream = await navigator.mediaDevices.getUserMedia({
             video: {
-              facingMode: { ideal: 'environment' },
               width: CAMERA_CONSTRAINTS.width,
               height: CAMERA_CONSTRAINTS.height,
             },
@@ -118,12 +121,28 @@ export function ScannerView() {
         const track = stream.getVideoTracks()[0];
         setActiveDeviceId(track?.getSettings().deviceId ?? deviceId ?? '');
 
+        const available = await navigator.mediaDevices.enumerateDevices();
+        const rearCamera = available.find((device) => device.kind === 'videoinput' && isRearCamera(device));
+        const currentDeviceId = track?.getSettings().deviceId;
+        if (!deviceId && rearCamera?.deviceId && rearCamera.deviceId !== currentDeviceId) {
+          stream.getTracks().forEach((videoTrack) => videoTrack.stop());
+          stream = await navigator.mediaDevices.getUserMedia({
+            video: {
+              deviceId: { exact: rearCamera.deviceId },
+              width: CAMERA_CONSTRAINTS.width,
+              height: CAMERA_CONSTRAINTS.height,
+            },
+            audio: false,
+          });
+          streamRef.current = stream;
+          setActiveDeviceId(stream.getVideoTracks()[0]?.getSettings().deviceId ?? rearCamera.deviceId);
+        }
+
         if (videoRef.current) {
           videoRef.current.srcObject = stream;
           await videoRef.current.play();
         }
 
-        const available = await navigator.mediaDevices.enumerateDevices();
         if (requestRef.current === requestId) {
           setDevices(available.filter((item) => item.kind === 'videoinput'));
         }
