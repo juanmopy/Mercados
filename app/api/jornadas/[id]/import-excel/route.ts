@@ -23,7 +23,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     if (!file) return NextResponse.json({ error: 'Archivo requerido' }, { status: 400 });
 
     const buffer = Buffer.from(await file.arrayBuffer());
-    const result = parseExcelFile(buffer);
+    const result = await parseExcelFile(buffer);
 
     // Check preview mode
     const mode = formData.get('mode') as string | null;

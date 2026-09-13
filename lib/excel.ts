@@ -1,4 +1,4 @@
-import * as XLSX from 'xlsx';
+import ExcelJS from 'exceljs';
 
 export interface ExcelBeneficiary {
   fullName: string;
@@ -11,26 +11,24 @@ export interface ExcelValidationResult {
   duplicates: { cedula: string; rows: number[] }[];
 }
 
-export function normalizeCedula(raw: string | number | null | undefined): string {
+export function normalizeCedula(raw: unknown): string {
   if (raw == null) return '';
   return String(raw).replace(/[^0-9]/g, '').trim();
 }
 
-export function normalizeName(raw: string | null | undefined): string {
+export function normalizeName(raw: unknown): string {
   if (!raw) return '';
   return String(raw).trim().replace(/\s+/g, ' ');
 }
 
-export function parseExcelFile(buffer: Buffer): ExcelValidationResult {
-  const workbook = XLSX.read(buffer, { type: 'buffer' });
-  const sheetName = workbook.SheetNames?.[0];
-  if (!sheetName) {
+export async function parseExcelFile(buffer: Buffer): Promise<ExcelValidationResult> {
+  const workbook = new ExcelJS.Workbook();
+  await workbook.xlsx.load(buffer);
+  const sheet = workbook.worksheets[0];
+  if (!sheet) {
     return { valid: [], errors: [{ row: 0, name: '', cedula: '', reason: 'El archivo no contiene hojas' }], duplicates: [] };
   }
-  const sheet = workbook.Sheets[sheetName];
-  const rows: any[] = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' });
-
-  if (rows.length < 2) {
+  if (sheet.rowCount < 2) {
     return { valid: [], errors: [{ row: 0, name: '', cedula: '', reason: 'El archivo no contiene datos (se esperan encabezados + filas)' }], duplicates: [] };
   }
 
@@ -38,14 +36,13 @@ export function parseExcelFile(buffer: Buffer): ExcelValidationResult {
   const errors: { row: number; name: string; cedula: string; reason: string }[] = [];
   const cedulaMap = new Map<string, number[]>();
 
-  // Skip header row (row 0)
-  for (let i = 1; i < rows.length; i++) {
-    const row = rows[i] ?? [];
-    const rawName = row[0];
-    const rawCedula = row[1];
+  // Skip header row (row 1)
+  for (let rowNum = 2; rowNum <= sheet.rowCount; rowNum++) {
+    const row = sheet.getRow(rowNum);
+    const rawName = row.getCell(1).value;
+    const rawCedula = row.getCell(2).value;
     const fullName = normalizeName(rawName);
     const cedula = normalizeCedula(rawCedula);
-    const rowNum = i + 1; // 1-based for user display
 
     if (!fullName && !cedula) continue; // skip empty rows
 
