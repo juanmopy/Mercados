@@ -4,10 +4,6 @@ import { useState, useRef, useCallback, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Camera, RotateCcw, CheckCircle, ArrowLeft, Loader2, AlertCircle } from 'lucide-react';
 
-function isRearCamera(device: MediaDeviceInfo): boolean {
-  return /back|rear|environment|trasera|posterior/i.test(device.label);
-}
-
 export function CaptureView() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -29,34 +25,9 @@ export function CaptureView() {
 
   const startCamera = useCallback(async () => {
     try {
-      let stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: { exact: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } },
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } },
       });
-
-      const devices = await navigator.mediaDevices.enumerateDevices();
-      const rearCamera = devices.find((device) => device.kind === 'videoinput' && isRearCamera(device));
-      const activeTrack = stream.getVideoTracks()[0];
-      const settings = activeTrack?.getSettings();
-      if (settings?.facingMode === 'user') {
-        stream.getTracks().forEach((track) => track.stop());
-        throw new Error('El navegador seleccionó la cámara frontal.');
-      }
-      const activeDeviceId = settings?.deviceId;
-      if (rearCamera?.deviceId && rearCamera.deviceId !== activeDeviceId) {
-        stream.getTracks().forEach((track) => track.stop());
-        stream = await navigator.mediaDevices.getUserMedia({
-          video: {
-            deviceId: { exact: rearCamera.deviceId },
-            width: { ideal: 1280 },
-            height: { ideal: 720 },
-          },
-        });
-        if (stream.getVideoTracks()[0]?.getSettings().facingMode === 'user') {
-          stream.getTracks().forEach((track) => track.stop());
-          throw new Error('La cámara trasera no está disponible.');
-        }
-      }
-
       streamRef.current = stream;
       if (videoRef.current) {
         videoRef.current.srcObject = stream;

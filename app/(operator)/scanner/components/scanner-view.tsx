@@ -15,14 +15,10 @@ import {
 type ScannerPhase = 'camera' | 'processing' | 'result';
 
 const CAMERA_CONSTRAINTS: MediaTrackConstraints = {
-  facingMode: { exact: 'environment' },
+  facingMode: 'environment',
   width: { ideal: 1920 },
   height: { ideal: 1080 },
 };
-
-function isRearCamera(device: MediaDeviceInfo): boolean {
-  return /back|rear|environment|trasera|posterior/i.test(device.label);
-}
 
 function cameraErrorMessage(error: unknown): string {
   if (!window.isSecureContext) {
@@ -89,7 +85,7 @@ export function ScannerView() {
           throw new DOMException('API de cámara no disponible', 'NotSupportedError');
         }
 
-        let stream = await navigator.mediaDevices.getUserMedia({
+        const stream = await navigator.mediaDevices.getUserMedia({
           video: deviceId
             ? {
                 deviceId: { exact: deviceId },
@@ -107,34 +103,9 @@ export function ScannerView() {
 
         streamRef.current = stream;
         const track = stream.getVideoTracks()[0];
-        const settings = track?.getSettings();
-        if (!deviceId && settings?.facingMode === 'user') {
-          stream.getTracks().forEach((videoTrack) => videoTrack.stop());
-          throw new Error('El navegador seleccionó la cámara frontal.');
-        }
-        setActiveDeviceId(settings?.deviceId ?? deviceId ?? '');
+        setActiveDeviceId(track?.getSettings().deviceId ?? deviceId ?? '');
 
         const available = await navigator.mediaDevices.enumerateDevices();
-        const rearCamera = available.find((device) => device.kind === 'videoinput' && isRearCamera(device));
-        const currentDeviceId = track?.getSettings().deviceId;
-        if (!deviceId && rearCamera?.deviceId && rearCamera.deviceId !== currentDeviceId) {
-          stream.getTracks().forEach((videoTrack) => videoTrack.stop());
-          stream = await navigator.mediaDevices.getUserMedia({
-            video: {
-              deviceId: { exact: rearCamera.deviceId },
-              width: CAMERA_CONSTRAINTS.width,
-              height: CAMERA_CONSTRAINTS.height,
-            },
-            audio: false,
-          });
-          streamRef.current = stream;
-          const rearTrack = stream.getVideoTracks()[0];
-          if (rearTrack?.getSettings().facingMode === 'user') {
-            stream.getTracks().forEach((videoTrack) => videoTrack.stop());
-            throw new Error('La cámara trasera no está disponible.');
-          }
-          setActiveDeviceId(rearTrack?.getSettings().deviceId ?? rearCamera.deviceId);
-        }
 
         if (videoRef.current) {
           videoRef.current.srcObject = stream;
