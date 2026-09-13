@@ -151,6 +151,37 @@ export function JornadaDetail({ jornadaId }: Readonly<{ jornadaId: string }>) {
           </div>
         </div>
 
+        <div className="bg-card rounded-xl p-6" style={{ boxShadow: 'var(--shadow-md)' }}>
+          <div className="flex items-center justify-between gap-3 mb-4">
+            <h3 className="font-bold text-foreground">Beneficiarios cargados</h3>
+            <span className="text-sm text-muted-foreground">{jornada?._count?.beneficiaries ?? 0} registros</span>
+          </div>
+          {(jornada?.beneficiaries?.length ?? 0) > 0 ? (
+            <div className="max-h-[28rem] overflow-auto rounded-lg border border-border">
+              <table className="w-full text-sm">
+                <thead className="sticky top-0 bg-muted text-left text-muted-foreground">
+                  <tr>
+                    <th className="px-3 py-2 font-medium">Nombre completo</th>
+                    <th className="px-3 py-2 font-medium">Cédula</th>
+                    <th className="px-3 py-2 font-medium">Entrega</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {jornada.beneficiaries.map((beneficiary: any) => (
+                    <tr key={beneficiary.id} className="border-t border-border">
+                      <td className="px-3 py-2 text-foreground">{beneficiary.fullName}</td>
+                      <td className="px-3 py-2 text-muted-foreground">{beneficiary.cedula}</td>
+                      <td className="px-3 py-2 text-muted-foreground">{beneficiary.delivery ? 'Realizada' : 'Pendiente'}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <p className="text-sm text-muted-foreground">No hay beneficiarios cargados.</p>
+          )}
+        </div>
+
         {jornada?.status === 'CERRADA' && (
           <div className="bg-card rounded-xl p-6 space-y-4" style={{ boxShadow: 'var(--shadow-md)' }}>
             <h3 className="font-bold text-foreground flex items-center gap-2"><FileText className="w-5 h-5" /> Filtros del PDF</h3>
