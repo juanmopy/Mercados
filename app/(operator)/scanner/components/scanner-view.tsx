@@ -15,7 +15,7 @@ import {
 type ScannerPhase = 'camera' | 'processing' | 'result';
 
 const CAMERA_CONSTRAINTS: MediaTrackConstraints = {
-  facingMode: { ideal: 'environment' },
+  facingMode: { exact: 'environment' },
   width: { ideal: 1920 },
   height: { ideal: 1080 },
 };
@@ -85,16 +85,29 @@ export function ScannerView() {
           throw new DOMException('API de cámara no disponible', 'NotSupportedError');
         }
 
-        const stream = await navigator.mediaDevices.getUserMedia({
-          video: deviceId
-            ? {
-                deviceId: { exact: deviceId },
-                width: CAMERA_CONSTRAINTS.width,
-                height: CAMERA_CONSTRAINTS.height,
-              }
-            : CAMERA_CONSTRAINTS,
-          audio: false,
-        });
+        let stream: MediaStream;
+        try {
+          stream = await navigator.mediaDevices.getUserMedia({
+            video: deviceId
+              ? {
+                  deviceId: { exact: deviceId },
+                  width: CAMERA_CONSTRAINTS.width,
+                  height: CAMERA_CONSTRAINTS.height,
+                }
+              : CAMERA_CONSTRAINTS,
+            audio: false,
+          });
+        } catch (cameraError) {
+          if (deviceId) throw cameraError;
+          stream = await navigator.mediaDevices.getUserMedia({
+            video: {
+              facingMode: { ideal: 'environment' },
+              width: CAMERA_CONSTRAINTS.width,
+              height: CAMERA_CONSTRAINTS.height,
+            },
+            audio: false,
+          });
+        }
 
         if (requestRef.current !== requestId) {
           stream.getTracks().forEach((track) => track.stop());
