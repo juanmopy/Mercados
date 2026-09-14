@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, Upload, Play, Square, RotateCcw, FileText, Download, AlertCircle, CheckCircle } from 'lucide-react';
+import { ArrowLeft, Upload, UserPlus, Play, Square, RotateCcw, FileText, Download, AlertCircle, CheckCircle } from 'lucide-react';
 import { toast } from 'sonner';
 
 export function JornadaDetail({ jornadaId }: Readonly<{ jornadaId: string }>) {
@@ -14,6 +14,8 @@ export function JornadaDetail({ jornadaId }: Readonly<{ jornadaId: string }>) {
   const [importing, setImporting] = useState(false);
   const [generatingPdf, setGeneratingPdf] = useState(false);
   const [generatingZip, setGeneratingZip] = useState(false);
+  const [manualBeneficiary, setManualBeneficiary] = useState({ fullName: '', cedula: '' });
+  const [addingBeneficiary, setAddingBeneficiary] = useState(false);
   const [operators, setOperators] = useState<any[]>([]);
   const [pdfOperatorId, setPdfOperatorId] = useState('');
   const [pdfFromDate, setPdfFromDate] = useState('');
@@ -71,6 +73,23 @@ export function JornadaDetail({ jornadaId }: Readonly<{ jornadaId: string }>) {
       loadJornada();
     } catch { toast.error('Error importando'); }
     finally { setImporting(false); }
+  };
+
+  const handleAddBeneficiary = async () => {
+    setAddingBeneficiary(true);
+    try {
+      const res = await fetch(`/api/jornadas/${jornadaId}/beneficiaries`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(manualBeneficiary),
+      });
+      const data = await res.json();
+      if (!res.ok) { toast.error(data?.error ?? 'Error agregando beneficiario'); return; }
+      toast.success('Beneficiario agregado exitosamente');
+      setManualBeneficiary({ fullName: '', cedula: '' });
+      loadJornada();
+    } catch { toast.error('Error de conexión'); }
+    finally { setAddingBeneficiary(false); }
   };
 
   const handleAction = async (action: string) => {
@@ -246,16 +265,34 @@ export function JornadaDetail({ jornadaId }: Readonly<{ jornadaId: string }>) {
         </div>
 
         {/* Excel import (only for CONFIGURADA) */}
-        {jornada?.status === 'CONFIGURADA' && (
+        {(jornada?.status === 'CONFIGURADA' || jornada?.status === 'REABIERTA') && (
           <div className="bg-card rounded-xl p-6" style={{ boxShadow: 'var(--shadow-md)' }}>
-            <h3 className="font-bold text-foreground mb-4 flex items-center gap-2"><Upload className="w-5 h-5" /> Importar beneficiarios desde Excel</h3>
-            <p className="text-muted-foreground text-sm mb-4">El archivo debe tener dos columnas: Nombre Completo y Cédula</p>
-            <input id="excel-upload" type="file" accept=".xlsx,.xls" onChange={handleExcelUpload} className="block w-full text-sm text-foreground file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-bold file:bg-primary file:text-primary-foreground hover:file:bg-primary/90" />
+            <div className="mb-6 pb-6 border-b border-border">
+              <h3 className="font-bold text-foreground mb-4 flex items-center gap-2"><UserPlus className="w-5 h-5" /> Agregar beneficiario manualmente</h3>
+              {jornada?.status === 'REABIERTA' && <p className="text-sm text-muted-foreground mb-4">La jornada está reabierta para correcciones. Los nuevos beneficiarios quedarán disponibles para registro.</p>}
+              <div className="grid grid-cols-1 md:grid-cols-[1fr_220px_auto] gap-3 items-end">
+                <label className="block text-sm text-muted-foreground">
+                  <span>Nombre completo</span>
+                  <input value={manualBeneficiary.fullName} onChange={(e) => setManualBeneficiary({ ...manualBeneficiary, fullName: e.target.value })} className="mt-1 w-full px-3 py-2 rounded-lg border border-input bg-background text-foreground" placeholder="Nombre del beneficiario" />
+                </label>
+                <label className="block text-sm text-muted-foreground">
+                  <span>Cédula</span>
+                  <input value={manualBeneficiary.cedula} onChange={(e) => setManualBeneficiary({ ...manualBeneficiary, cedula: e.target.value })} inputMode="numeric" className="mt-1 w-full px-3 py-2 rounded-lg border border-input bg-background text-foreground" placeholder="123456789" />
+                </label>
+                <button onClick={handleAddBeneficiary} disabled={addingBeneficiary} className="h-10 px-4 rounded-lg bg-primary text-primary-foreground text-sm font-bold hover:bg-primary/90 disabled:opacity-50">
+                  {addingBeneficiary ? 'Agregando...' : 'Agregar'}
+                </button>
+              </div>
+            </div>
+            {jornada?.status === 'CONFIGURADA' && <>
+              <h3 className="font-bold text-foreground mb-4 flex items-center gap-2"><Upload className="w-5 h-5" /> Importar beneficiarios desde Excel</h3>
+              <p className="text-muted-foreground text-sm mb-4">El archivo debe tener dos columnas: Nombre Completo y Cédula</p>
+              <input id="excel-upload" type="file" accept=".xlsx,.xls" onChange={handleExcelUpload} className="block w-full text-sm text-foreground file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-bold file:bg-primary file:text-primary-foreground hover:file:bg-primary/90" />
 
-            {uploading && <p className="text-muted-foreground mt-3">Procesando archivo...</p>}
+              {uploading && <p className="text-muted-foreground mt-3">Procesando archivo...</p>}
 
-            {preview && (
-              <div className="mt-4 space-y-3">
+              {preview && (
+                <div className="mt-4 space-y-3">
                 <div className="flex items-center gap-2">
                   <CheckCircle className="w-5 h-5 text-green-600" />
                   <span className="text-foreground font-bold">{preview?.totalValid ?? 0} beneficiarios válidos</span>
@@ -291,8 +328,9 @@ export function JornadaDetail({ jornadaId }: Readonly<{ jornadaId: string }>) {
                     {importing ? 'Importando...' : `Confirmar importación de ${preview?.totalValid ?? 0} beneficiarios`}
                   </button>
                 )}
-              </div>
-            )}
+                </div>
+              )}
+            </>}
           </div>
         )}
       </div>
