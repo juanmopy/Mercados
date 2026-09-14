@@ -23,7 +23,7 @@ export async function GET(request: NextRequest) {
 
   try {
     const deliveries = await prisma.delivery.findMany({
-      where: { jornadaId },
+      where: { jornadaId, photoPath: { not: '' } },
       include: {
         beneficiary: { select: { fullName: true, cedula: true } },
       },

@@ -1,7 +1,7 @@
 import { PassThrough } from 'stream';
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports
-const archiver = require('archiver');
+const { ZipArchive } = require('archiver');
 
 interface DeliveryForZIP {
   cedula: string;
@@ -21,7 +21,7 @@ function normalizeFileName(name: string): string {
 
 export async function generatePhotosZIP(deliveries: DeliveryForZIP[]): Promise<Buffer> {
   return new Promise((resolve, reject) => {
-    const archive = archiver('zip', { store: true });
+    const archive = new ZipArchive({ store: true });
     const chunks: Buffer[] = [];
     const passThrough = new PassThrough();
 

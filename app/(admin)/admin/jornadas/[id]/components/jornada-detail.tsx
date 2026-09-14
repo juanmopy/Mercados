@@ -98,8 +98,12 @@ export function JornadaDetail({ jornadaId }: Readonly<{ jornadaId: string }>) {
       if (!res.ok) { const d = await res.json(); toast.error(d?.error ?? 'Error generando PDF'); return; }
       const blob = await res.blob();
       const url = URL.createObjectURL(blob);
+      const fileName = (jornada?.description ?? 'reporte')
+        .trim()
+        .replace(/[<>:"/\\|?*]+/g, '_')
+        .replace(/\s+/g, '_');
       const a = document.createElement('a');
-      a.href = url; a.download = `jornada_${jornadaId}.pdf`; a.click();
+      a.href = url; a.download = `${fileName || 'reporte'}.pdf`; a.click();
       URL.revokeObjectURL(url);
       toast.success('PDF descargado');
     } catch { toast.error('Error generando PDF'); }
