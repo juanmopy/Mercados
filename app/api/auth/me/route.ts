@@ -1,10 +1,10 @@
 export const dynamic = "force-dynamic";
 
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { getAdminFromCookie, getOperatorFromCookie } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   const admin = await getAdminFromCookie();
   if (admin) {
     return NextResponse.json({ type: 'admin', name: admin.name, email: admin.email, adminId: admin.adminId });

@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { Users, Package, Clock, LogOut, Shield, Database, TrendingUp, Calendar } from 'lucide-react';
+import { Users, Package, Clock, LogOut, Shield, Database, TrendingUp, Calendar, Plus } from 'lucide-react';
 import dynamic from 'next/dynamic';
 
 const StatsCharts = dynamic(() => import('./stats-charts').then(m => m.StatsCharts), { ssr: false });
@@ -111,22 +111,36 @@ export function AdminDashboard() {
           ))}
         </div>
 
-        {/* Jornada selector */}
-        <div className="mb-6">
-          <label htmlFor="dashboard-jornada" className="text-sm text-muted-foreground mb-1 block">Seleccionar jornada</label>
-          <select
-            id="dashboard-jornada"
-            value={selectedJornada}
-            onChange={(e) => setSelectedJornada(e.target.value)}
-            className="w-full max-w-md px-4 py-2 rounded-lg border border-input bg-background text-foreground"
-          >
-            {(jornadas ?? []).map((j: any) => (
-              <option key={j?.id} value={j?.id}>
-                {j?.description} ({j?.status})
-              </option>
-            ))}
-          </select>
-        </div>
+        {(jornadas?.length ?? 0) === 0 ? (
+          <div className="min-h-[calc(100vh-190px)] flex items-center justify-center">
+            <div className="w-full max-w-lg bg-card rounded-xl p-8 text-center" style={{ boxShadow: 'var(--shadow-md)' }}>
+              <div className="w-14 h-14 mx-auto mb-4 rounded-full bg-primary/10 flex items-center justify-center">
+                <Calendar className="w-7 h-7 text-primary" />
+              </div>
+              <h1 className="text-xl font-bold text-foreground mb-2">Aún no hay jornadas creadas</h1>
+              <p className="text-muted-foreground mb-6">Crea una jornada para comenzar a importar beneficiarios y consultar sus estadísticas.</p>
+              <button onClick={() => router.push('/admin/jornadas')} className="inline-flex items-center justify-center gap-2 h-10 px-4 rounded-lg bg-primary text-primary-foreground text-sm font-bold hover:bg-primary/90">
+                <Plus className="w-4 h-4" /> Crear jornada
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className="mb-6">
+            <label htmlFor="dashboard-jornada" className="text-sm text-muted-foreground mb-1 block">Seleccionar jornada</label>
+            <select
+              id="dashboard-jornada"
+              value={selectedJornada}
+              onChange={(e) => setSelectedJornada(e.target.value)}
+              className="w-full max-w-md px-4 py-2 rounded-lg border border-input bg-background text-foreground"
+            >
+              {(jornadas ?? []).map((j: any) => (
+                <option key={j?.id} value={j?.id}>
+                  {j?.description} ({j?.status})
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
 
         {/* Stats cards */}
         {stats && (

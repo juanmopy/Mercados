@@ -6,7 +6,7 @@ import { getAdminFromCookie } from '@/lib/auth';
 import { logAudit, getClientInfo } from '@/lib/audit';
 import { deleteStorageFile } from '@/lib/supabase';
 
-export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export async function GET(_request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const admin = await getAdminFromCookie();
   if (!admin) return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
 

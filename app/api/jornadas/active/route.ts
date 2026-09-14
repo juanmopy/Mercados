@@ -1,10 +1,10 @@
 export const dynamic = "force-dynamic";
 
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getOperatorFromCookie, getAdminFromCookie } from '@/lib/auth';
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   const operator = await getOperatorFromCookie();
   const admin = await getAdminFromCookie();
   if (!operator && !admin) return NextResponse.json({ error: 'No autorizado' }, { status: 401 });

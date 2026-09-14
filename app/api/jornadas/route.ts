@@ -5,7 +5,7 @@ import { prisma } from '@/lib/prisma';
 import { getAdminFromCookie } from '@/lib/auth';
 import { logAudit, getClientInfo } from '@/lib/audit';
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   const admin = await getAdminFromCookie();
   if (!admin) return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
 

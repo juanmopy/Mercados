@@ -101,7 +101,7 @@ export async function POST(request: NextRequest) {
 }
 
 // Handle failed login separately for proper counting
-export async function PUT(request: NextRequest) {
+export async function PUT() {
   // This is used for handling "wrong code" - we check all operators
   // Actually the main POST handles everything. This route unused.
   return NextResponse.json({ error: 'Método no permitido' }, { status: 405 });

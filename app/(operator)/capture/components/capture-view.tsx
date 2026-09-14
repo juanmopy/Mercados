@@ -8,7 +8,6 @@ export function CaptureView() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const cedula = searchParams?.get('cedula') ?? '';
-  const beneficiaryId = searchParams?.get('beneficiaryId') ?? '';
   const jornadaId = searchParams?.get('jornadaId') ?? '';
   const beneficiaryName = searchParams?.get('name') ?? '';
 
