@@ -117,8 +117,12 @@ export function JornadaDetail({ jornadaId }: Readonly<{ jornadaId: string }>) {
       if (!res.ok) { const d = await res.json(); toast.error(d?.error ?? 'Error generando ZIP'); return; }
       const blob = await res.blob();
       const url = URL.createObjectURL(blob);
+      const fileName = (jornada?.description ?? 'reporte')
+        .trim()
+        .replace(/[<>:"/\\|?*]+/g, '_')
+        .replace(/\s+/g, '_');
       const a = document.createElement('a');
-      a.href = url; a.download = `fotos_jornada_${jornadaId}.zip`; a.click();
+      a.href = url; a.download = `${fileName || 'reporte'}.zip`; a.click();
       URL.revokeObjectURL(url);
       toast.success('ZIP descargado');
     } catch { toast.error('Error generando ZIP'); }
