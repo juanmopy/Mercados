@@ -24,6 +24,7 @@ export function JornadaDetail({ jornadaId }: Readonly<{ jornadaId: string }>) {
   const [pdfCedulaTo, setPdfCedulaTo] = useState('');
   const [pdfCedulas, setPdfCedulas] = useState('');
   const [pdfOrder, setPdfOrder] = useState('time');
+  const [deliveryStatusFilter, setDeliveryStatusFilter] = useState('all');
 
   const loadJornada = useCallback(async () => {
     try {
@@ -156,6 +157,14 @@ export function JornadaDetail({ jornadaId }: Readonly<{ jornadaId: string }>) {
     REABIERTA: 'bg-blue-100 text-blue-800',
     CERRADA: 'bg-gray-200 text-gray-800',
   };
+  const beneficiaries = jornada?.beneficiaries ?? [];
+  const deliveredCount = beneficiaries.filter((beneficiary: any) => beneficiary.delivery).length;
+  const pendingCount = beneficiaries.length - deliveredCount;
+  const filteredBeneficiaries = beneficiaries.filter((beneficiary: any) => (
+    deliveryStatusFilter === 'all'
+      || (deliveryStatusFilter === 'delivered' && beneficiary.delivery)
+      || (deliveryStatusFilter === 'pending' && !beneficiary.delivery)
+  ));
 
   return (
     <div className="min-h-screen bg-background">
@@ -181,29 +190,46 @@ export function JornadaDetail({ jornadaId }: Readonly<{ jornadaId: string }>) {
         <div className="bg-card rounded-xl p-6" style={{ boxShadow: 'var(--shadow-md)' }}>
           <div className="flex items-center justify-between gap-3 mb-4">
             <h3 className="font-bold text-foreground">Beneficiarios cargados</h3>
-            <span className="text-sm text-muted-foreground">{jornada?._count?.beneficiaries ?? 0} registros</span>
+            <span className="text-sm text-muted-foreground">{filteredBeneficiaries.length} de {beneficiaries.length} registros</span>
           </div>
-          {(jornada?.beneficiaries?.length ?? 0) > 0 ? (
-            <div className="max-h-[28rem] overflow-auto rounded-lg border border-border">
-              <table className="w-full text-sm">
-                <thead className="sticky top-0 bg-muted text-left text-muted-foreground">
-                  <tr>
-                    <th className="px-3 py-2 font-medium">Nombre completo</th>
-                    <th className="px-3 py-2 font-medium">Cédula</th>
-                    <th className="px-3 py-2 font-medium">Entrega</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {jornada.beneficiaries.map((beneficiary: any) => (
-                    <tr key={beneficiary.id} className="border-t border-border">
-                      <td className="px-3 py-2 text-foreground">{beneficiary.fullName}</td>
-                      <td className="px-3 py-2 text-muted-foreground">{beneficiary.cedula}</td>
-                      <td className="px-3 py-2 text-muted-foreground">{beneficiary.delivery ? 'Realizada' : 'Pendiente'}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+          {beneficiaries.length > 0 ? (
+            <>
+              <div className="flex flex-wrap items-center gap-2 mb-4">
+                <button onClick={() => setDeliveryStatusFilter('all')} className={`px-3 py-1.5 rounded-lg text-sm font-medium ${deliveryStatusFilter === 'all' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-accent'}`}>
+                  Todos ({beneficiaries.length})
+                </button>
+                <button onClick={() => setDeliveryStatusFilter('pending')} className={`px-3 py-1.5 rounded-lg text-sm font-medium ${deliveryStatusFilter === 'pending' ? 'bg-orange-500 text-white' : 'bg-muted text-muted-foreground hover:bg-accent'}`}>
+                  Pendientes ({pendingCount})
+                </button>
+                <button onClick={() => setDeliveryStatusFilter('delivered')} className={`px-3 py-1.5 rounded-lg text-sm font-medium ${deliveryStatusFilter === 'delivered' ? 'bg-green-600 text-white' : 'bg-muted text-muted-foreground hover:bg-accent'}`}>
+                  Entregados ({deliveredCount})
+                </button>
+              </div>
+              {filteredBeneficiaries.length > 0 ? (
+                <div className="max-h-[28rem] overflow-auto rounded-lg border border-border">
+                  <table className="w-full text-sm">
+                    <thead className="sticky top-0 bg-muted text-left text-muted-foreground">
+                      <tr>
+                        <th className="px-3 py-2 font-medium">Nombre completo</th>
+                        <th className="px-3 py-2 font-medium">Cédula</th>
+                        <th className="px-3 py-2 font-medium">Entrega</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {filteredBeneficiaries.map((beneficiary: any) => (
+                        <tr key={beneficiary.id} className="border-t border-border">
+                          <td className="px-3 py-2 text-foreground">{beneficiary.fullName}</td>
+                          <td className="px-3 py-2 text-muted-foreground">{beneficiary.cedula}</td>
+                          <td className="px-3 py-2 text-muted-foreground">{beneficiary.delivery ? 'Realizada' : 'Pendiente'}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground py-4">No hay beneficiarios con este estado.</p>
+              )}
+            </>
           ) : (
             <p className="text-sm text-muted-foreground">No hay beneficiarios cargados.</p>
           )}
