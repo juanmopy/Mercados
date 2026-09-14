@@ -261,9 +261,20 @@ export function JornadaDetail({ jornadaId }: Readonly<{ jornadaId: string }>) {
                   <span className="text-foreground font-bold">{preview?.totalValid ?? 0} beneficiarios válidos</span>
                 </div>
                 {(preview?.totalErrors ?? 0) > 0 && (
-                  <div className="flex items-center gap-2">
-                    <AlertCircle className="w-5 h-5 text-red-600" />
-                    <span className="text-destructive font-bold">{preview?.totalErrors ?? 0} registros con errores</span>
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2">
+                      <AlertCircle className="w-5 h-5 text-red-600" />
+                      <span className="text-destructive font-bold">{preview?.totalErrors ?? 0} registros con errores</span>
+                    </div>
+                    <div className="bg-red-50 rounded-lg p-3 space-y-1">
+                      {(preview?.errors ?? []).map((error: any) => (
+                        <p key={`${error?.row}-${error?.reason}`} className="text-red-700 text-sm">
+                          Fila {error?.row}: {error?.reason}
+                          {error?.name ? ` | Nombre: ${error.name}` : ''}
+                          {error?.cedula ? ` | Cédula: ${error.cedula}` : ''}
+                        </p>
+                      ))}
+                    </div>
                   </div>
                 )}
                 {(preview?.duplicates?.length ?? 0) > 0 && (
