@@ -5,6 +5,7 @@ import { prisma } from '@/lib/prisma';
 import { getAdminFromCookie } from '@/lib/auth';
 import { logAudit, getClientInfo } from '@/lib/audit';
 import { uploadPhoto } from '@/lib/supabase';
+import { compressDeliveryPhoto } from '@/lib/image';
 
 export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const admin = await getAdminFromCookie();
@@ -22,7 +23,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     const file = formData.get('photo') as File | null;
     if (!file) return NextResponse.json({ error: 'Foto requerida' }, { status: 400 });
 
-    const buffer = Buffer.from(await file.arrayBuffer());
+    const buffer = await compressDeliveryPhoto(Buffer.from(await file.arrayBuffer()));
     const timestamp = Date.now();
     const newPath = `jornada_${delivery.jornadaId}/delivery_${id}_replacement_${timestamp}.jpg`;
 
