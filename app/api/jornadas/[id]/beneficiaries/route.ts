@@ -13,8 +13,8 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   const { id } = await params;
   const jornada = await prisma.jornada.findUnique({ where: { id } });
   if (!jornada) return NextResponse.json({ error: 'Jornada no encontrada' }, { status: 404 });
-  if (jornada.status !== 'CONFIGURADA' && jornada.status !== 'REABIERTA') {
-    return NextResponse.json({ error: 'Solo se pueden agregar beneficiarios en jornadas configuradas o reabiertas' }, { status: 400 });
+  if (jornada.status !== 'CONFIGURADA' && jornada.status !== 'ACTIVA' && jornada.status !== 'REABIERTA') {
+    return NextResponse.json({ error: 'Solo se pueden agregar beneficiarios en jornadas configuradas, activas o reabiertas' }, { status: 400 });
   }
 
   try {

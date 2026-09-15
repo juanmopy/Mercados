@@ -291,10 +291,11 @@ export function JornadaDetail({ jornadaId }: Readonly<{ jornadaId: string }>) {
         </div>
 
         {/* Excel import (only for CONFIGURADA) */}
-        {(jornada?.status === 'CONFIGURADA' || jornada?.status === 'REABIERTA') && (
+        {(jornada?.status === 'CONFIGURADA' || jornada?.status === 'ACTIVA' || jornada?.status === 'REABIERTA') && (
           <div className="bg-card rounded-xl p-6" style={{ boxShadow: 'var(--shadow-md)' }}>
             <div className="mb-6 pb-6 border-b border-border">
               <h3 className="font-bold text-foreground mb-4 flex items-center gap-2"><UserPlus className="w-5 h-5" /> Agregar beneficiario manualmente</h3>
+              {jornada?.status === 'ACTIVA' && <p className="text-sm text-muted-foreground mb-4">Agregue personas que lleguen el día de la entrega y haya disponibilidad de beneficiarios.</p>}
               {jornada?.status === 'REABIERTA' && <p className="text-sm text-muted-foreground mb-4">La jornada está reabierta para correcciones. Los nuevos beneficiarios quedarán disponibles para registro.</p>}
               <div className="grid grid-cols-1 md:grid-cols-[1fr_220px_auto] gap-3 items-end">
                 <label className="block text-sm text-muted-foreground">
