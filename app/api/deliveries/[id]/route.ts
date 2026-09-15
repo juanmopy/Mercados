@@ -41,8 +41,8 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
     include: { beneficiary: true, jornada: { select: { status: true } } },
   });
   if (!delivery) return NextResponse.json({ error: 'Entrega no encontrada' }, { status: 404 });
-  if (delivery.jornada.status !== 'REABIERTA') {
-    return NextResponse.json({ error: 'Reabra la jornada para realizar correcciones administrativas.' }, { status: 409 });
+  if (delivery.jornada.status !== 'ACTIVA' && delivery.jornada.status !== 'REABIERTA') {
+    return NextResponse.json({ error: 'La jornada debe estar activa o reabierta para eliminar una entrega.' }, { status: 409 });
   }
 
   // Delete photo from storage

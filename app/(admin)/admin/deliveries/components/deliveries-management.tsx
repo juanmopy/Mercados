@@ -55,7 +55,11 @@ export function DeliveriesManagement() {
     if (!confirm('¿Está seguro de eliminar esta entrega? El beneficiario volverá a estado pendiente.')) return;
     try {
       const res = await fetch(`/api/deliveries/${id}`, { method: 'DELETE' });
-      if (!res.ok) { toast.error('Error eliminando'); return; }
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        toast.error(data?.error ?? 'Error eliminando');
+        return;
+      }
       toast.success('Entrega eliminada');
       load();
     } catch { toast.error('Error'); }
@@ -158,7 +162,7 @@ export function DeliveriesManagement() {
                         <div className="flex justify-end gap-1">
                           <button onClick={() => viewPhoto(d.id)} className="p-1.5 rounded hover:bg-muted" title="Ver foto"><Image className="w-4 h-4 text-blue-600" /></button>
                           {d?.jornada?.status === 'REABIERTA' && <button onClick={() => openCorrection(d)} className="p-1.5 rounded hover:bg-muted" title="Corregir fecha y hora"><CalendarClock className="w-4 h-4 text-orange-600" /></button>}
-                          <button onClick={() => handleDelete(d.id)} className="p-1.5 rounded hover:bg-muted" title="Eliminar"><Trash2 className="w-4 h-4 text-red-600" /></button>
+                          {(d?.jornada?.status === 'ACTIVA' || d?.jornada?.status === 'REABIERTA') && <button onClick={() => handleDelete(d.id)} className="p-1.5 rounded hover:bg-muted" title="Eliminar entrega"><Trash2 className="w-4 h-4 text-red-600" /></button>}
                         </div>
                       </td>
                     </tr>
