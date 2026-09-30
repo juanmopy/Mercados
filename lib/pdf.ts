@@ -1,5 +1,4 @@
 import { PDFDocument, rgb, StandardFonts } from 'pdf-lib';
-import { formatBogota } from './timezone';
 
 interface DeliveryForPDF {
   id: string;
@@ -77,8 +76,8 @@ export async function generateDeliveryPDF(deliveries: DeliveryForPDF[]): Promise
 
     // Text below photo
     const textY = pos.y - TEXT_LINE_H - 4;
-    const timestamp = item.correctedTimestamp ?? item.serverTimestamp;
-    const dateStr = formatBogota(timestamp);
+    // const timestamp = item.correctedTimestamp ?? item.serverTimestamp;
+    // const dateStr = formatBogota(timestamp);
 
     page.drawText(item.beneficiaryName ?? 'Sin nombre', {
       x: pos.x,
@@ -95,24 +94,24 @@ export async function generateDeliveryPDF(deliveries: DeliveryForPDF[]): Promise
       font,
       color: rgb(0.2, 0.2, 0.2),
     });
-    page.drawText(dateStr, {
-      x: pos.x,
-      y: textY - TEXT_LINE_H * 2,
-      size: 8,
-      font,
-      color: rgb(0.3, 0.3, 0.3),
-    });
+    // page.drawText(dateStr, {
+    //   x: pos.x,
+    //   y: textY - TEXT_LINE_H * 2,
+    //   size: 8,
+    //   font,
+    //   color: rgb(0.3, 0.3, 0.3),
+    // });
 
     // Page number
-    const pageNumText = `P\u00e1gina ${pageIdx + 1} de ${totalPages}`;
-    const textWidth = font.widthOfTextAtSize(pageNumText, 9);
-    page.drawText(pageNumText, {
-      x: (PAGE_W - textWidth) / 2,
-      y: 20,
-      size: 9,
-      font,
-      color: rgb(0.4, 0.4, 0.4),
-    });
+    // const pageNumText = `P\u00e1gina ${pageIdx + 1} de ${totalPages}`;
+    // const textWidth = font.widthOfTextAtSize(pageNumText, 9);
+    // page.drawText(pageNumText, {
+    //   x: (PAGE_W - textWidth) / 2,
+    //   y: 20,
+    //   size: 9,
+    //   font,
+    //   color: rgb(0.4, 0.4, 0.4),
+    // });
   }
 
   return pdfDoc.save();
