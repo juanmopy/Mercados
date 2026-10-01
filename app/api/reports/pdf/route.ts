@@ -40,6 +40,18 @@ function buildPdfWhere(jornadaId: string, searchParams: URLSearchParams) {
   return where;
 }
 
+function getPdfPagination(searchParams: URLSearchParams) {
+  const requestedPart = Number.parseInt(searchParams.get('part') ?? '1', 10);
+  const requestedPageSize = Number.parseInt(searchParams.get('pageSize') ?? '200', 10);
+
+  return {
+    part: Number.isFinite(requestedPart) && requestedPart > 0 ? requestedPart : 1,
+    pageSize: Number.isFinite(requestedPageSize)
+      ? Math.min(Math.max(requestedPageSize, 1), 200)
+      : 200,
+  };
+}
+
 export async function GET(request: NextRequest) {
   const admin = await getAdminFromCookie();
   if (!admin) return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
@@ -56,6 +68,7 @@ export async function GET(request: NextRequest) {
 
   try {
     const order = searchParams.get('order') ?? 'time';
+    const { part, pageSize } = getPdfPagination(searchParams);
     const where = buildPdfWhere(jornadaId, searchParams);
 
     const deliveries = await prisma.delivery.findMany({
@@ -68,11 +81,16 @@ export async function GET(request: NextRequest) {
         : { serverTimestamp: 'asc' },
     });
 
-    // Download photos in batches
+    const totalItems = deliveries?.length ?? 0;
+    const totalParts = Math.max(Math.ceil(totalItems / pageSize), 1);
+    const startIndex = (part - 1) * pageSize;
+    const pageDeliveries = (deliveries ?? []).slice(startIndex, startIndex + pageSize);
+
+    // Download only the requested PDF part to keep memory bounded.
     const pdfItems: any[] = [];
     const BATCH_SIZE = 5;
-    for (let i = 0; i < (deliveries?.length ?? 0); i += BATCH_SIZE) {
-      const batch = (deliveries ?? []).slice(i, i + BATCH_SIZE);
+    for (let i = 0; i < pageDeliveries.length; i += BATCH_SIZE) {
+      const batch = pageDeliveries.slice(i, i + BATCH_SIZE);
       const results = await Promise.allSettled(
         batch.map(async (d: any) => {
           try {
@@ -100,16 +118,19 @@ export async function GET(request: NextRequest) {
       actionType: 'PDF_GENERATED',
       adminId: admin.adminId,
       jornadaId,
-      detail: `PDF generado con ${pdfItems.length} entregas`,
+      detail: `PDF generado parte ${part} de ${totalParts} con ${pdfItems.length} entregas`,
       ipAddress,
       userAgent,
     });
 
-    const fileName = `jornada_${(jornada.description ?? 'reporte').replace(/\s+/g, '_')}_${formatBogota(jornada.officialDate, 'yyyy-MM-dd')}.pdf`;
+    const fileName = `jornada_${(jornada.description ?? 'reporte').replace(/\s+/g, '_')}_${formatBogota(jornada.officialDate, 'yyyy-MM-dd')}_parte_${part}_de_${totalParts}.pdf`;
     return new NextResponse(pdfBytes, {
       headers: {
         'Content-Type': 'application/pdf',
         'Content-Disposition': `attachment; filename="${fileName}"`,
+        'X-PDF-Part': String(part),
+        'X-PDF-Total-Parts': String(totalParts),
+        'X-PDF-Total-Items': String(totalItems),
       },
     });
   } catch (e: any) {

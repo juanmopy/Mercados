@@ -5,6 +5,39 @@ import { useRouter } from 'next/navigation';
 import { ArrowLeft, Upload, UserPlus, Play, Square, RotateCcw, FileText, Download, AlertCircle, CheckCircle } from 'lucide-react';
 import { toast } from 'sonner';
 
+function addPdfFilters(params: URLSearchParams, filters: Record<string, string>) {
+  Object.entries(filters).forEach(([key, value]) => {
+    if (value) params.set(key, value);
+  });
+}
+
+async function downloadPdfParts(baseParams: URLSearchParams, fileName: string) {
+  let totalParts = 1;
+
+  for (let part = 1; part <= totalParts; part += 1) {
+    const params = new URLSearchParams(baseParams);
+    params.set('part', String(part));
+    const res = await fetch(`/api/reports/pdf?${params.toString()}`);
+    if (!res.ok) {
+      const data = await res.json();
+      throw new Error(data?.error ?? `Error generando la parte ${part} del PDF`);
+    }
+
+    const headerTotalParts = Number.parseInt(res.headers.get('X-PDF-Total-Parts') ?? '1', 10);
+    if (Number.isFinite(headerTotalParts) && headerTotalParts > 0) totalParts = headerTotalParts;
+
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement('a');
+    anchor.href = url;
+    anchor.download = `${fileName || 'reporte'}_parte_${part}_de_${totalParts}.pdf`;
+    anchor.click();
+    URL.revokeObjectURL(url);
+  }
+
+  return totalParts;
+}
+
 export function JornadaDetail({ jornadaId }: Readonly<{ jornadaId: string }>) {
   const router = useRouter();
   const [jornada, setJornada] = useState<any>(null);
@@ -107,26 +140,23 @@ export function JornadaDetail({ jornadaId }: Readonly<{ jornadaId: string }>) {
   const handlePdf = async () => {
     setGeneratingPdf(true);
     try {
-      const params = new URLSearchParams({ jornadaId, order: pdfOrder });
-      if (pdfOperatorId) params.set('operatorId', pdfOperatorId);
-      if (pdfFromDate) params.set('fromDate', pdfFromDate);
-      if (pdfToDate) params.set('toDate', pdfToDate);
-      if (pdfCedulaFrom) params.set('cedulaFrom', pdfCedulaFrom);
-      if (pdfCedulaTo) params.set('cedulaTo', pdfCedulaTo);
-      if (pdfCedulas.trim()) params.set('cedulas', pdfCedulas);
-      const res = await fetch(`/api/reports/pdf?${params.toString()}`);
-      if (!res.ok) { const d = await res.json(); toast.error(d?.error ?? 'Error generando PDF'); return; }
-      const blob = await res.blob();
-      const url = URL.createObjectURL(blob);
+      const baseParams = new URLSearchParams({ jornadaId, order: pdfOrder, pageSize: '200' });
+      addPdfFilters(baseParams, {
+        operatorId: pdfOperatorId,
+        fromDate: pdfFromDate,
+        toDate: pdfToDate,
+        cedulaFrom: pdfCedulaFrom,
+        cedulaTo: pdfCedulaTo,
+        cedulas: pdfCedulas.trim(),
+      });
+
       const fileName = (jornada?.description ?? 'reporte')
         .trim()
         .replace(/[<>:"/\\|?*]+/g, '_')
         .replace(/\s+/g, '_');
-      const a = document.createElement('a');
-      a.href = url; a.download = `${fileName || 'reporte'}.pdf`; a.click();
-      URL.revokeObjectURL(url);
-      toast.success('PDF descargado');
-    } catch { toast.error('Error generando PDF'); }
+      const totalParts = await downloadPdfParts(baseParams, fileName);
+      toast.success(`PDF descargado en ${totalParts} parte${totalParts === 1 ? '' : 's'}`);
+    } catch (error) { toast.error(error instanceof Error ? error.message : 'Error generando PDF'); }
     finally { setGeneratingPdf(false); }
   };
 
